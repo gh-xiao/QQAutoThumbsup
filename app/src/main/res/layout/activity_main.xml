@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="50dp"
+        android:src="@drawable/qq"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="QQ自动点赞"
+        android:textSize="25sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView2" />
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/ll_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView">
+
+        <TextView
+            android:id="@+id/tv_permissions1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="当前无障碍权限:" />
+
+        <TextView
+            android:id="@+id/state1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/ll_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ll_1">
+
+        <TextView
+            android:id="@+id/tv_permissions2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="当前系统悬浮窗权限:" />
+
+        <TextView
+            android:id="@+id/state2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/fresh_btn"
+        style="@style/Widget.Material3.Button.IconButton.Filled"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="刷新"
+        app:icon="@drawable/reset"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ll_2" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/goto_setting_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="75dp"
+        android:text="前往无障碍设置"
+        android:textSize="14sp"
+        app:icon="@drawable/accessible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/build_win_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="75dp"
+        android:text="创建点赞悬浮窗"
+        android:textSize="14sp"
+        app:icon="@drawable/build"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/goto_setting_btn" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/float_win_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="显示点赞悬浮窗"
+        android:textSize="14sp"
+        app:icon="@drawable/window"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/build_win_btn" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/jump_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="跳转到QQ"
+        android:textSize="14sp"
+        app:icon="@drawable/jump"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/float_win_btn" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/visibility_off"
+        app:layout_constraintBottom_toTopOf="@+id/textView2"
+        app:layout_constraintEnd_toEndOf="@+id/textView2"
+        app:layout_constraintStart_toStartOf="@+id/textView2" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:text="长按悬浮窗控件可以隐藏不需要的控件"
+        android:textColor="#808080"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

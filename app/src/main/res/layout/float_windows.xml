@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/expanded_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/like_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开启点赞"
+            app:icon="@drawable/thumb_up" />
+
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/vis_off_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="隐藏浮窗"
+            app:icon="@drawable/visibility_off" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/return_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="返回软件"
+            app:icon="@drawable/redo" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/finish_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="关闭软件"
+            app:icon="@drawable/clear" />
+    </LinearLayout>
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/reset_btn"
+            style="@style/Widget.Material3.Button.IconButton.Filled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="重置浮窗"
+            android:visibility="gone"
+            app:icon="@drawable/reset"
+            app:layout_constraintEnd_toEndOf="@+id/expanded_menu"
+            app:layout_constraintTop_toBottomOf="@+id/expanded_menu" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/collapse_btn"
+            style="@style/Widget.Material3.Button.IconButton.Filled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/blue"
+            android:contentDescription="收起浮窗"
+            app:icon="@drawable/collapse"
+            app:layout_constraintEnd_toEndOf="@+id/expanded_menu"
+            app:layout_constraintTop_toBottomOf="@+id/expanded_menu" />
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+
+</LinearLayout>
