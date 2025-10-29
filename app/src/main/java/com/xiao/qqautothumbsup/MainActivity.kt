@@ -2,7 +2,6 @@ package com.xiao.qqautothumbsup
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
-import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -14,44 +13,39 @@ import android.view.Gravity
 import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.lifecycle.Lifecycle
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.lzf.easyfloat.EasyFloat
 import com.lzf.easyfloat.enums.ShowPattern
 import com.lzf.easyfloat.interfaces.OnPermissionResult
-import com.lzf.easyfloat.permission.PermissionUtils.checkPermission
+import com.lzf.easyfloat.permission.PermissionUtils
 import com.lzf.easyfloat.permission.PermissionUtils.requestPermission
+import com.xiao.qqautothumbsup.Constant.EXTRA_FRAGMENT_ARG_KEY
+import com.xiao.qqautothumbsup.Constant.EXTRA_SHOW_FRAGMENT_ARGUMENTS
+import com.xiao.qqautothumbsup.Constant.IS_AUTO_LIKE_ENABLE
+import com.xiao.qqautothumbsup.Constant.QQ_COMPONENT_NAME
+import com.xiao.qqautothumbsup.Constant.QQ_PACKAGE_NAME
 import com.xiao.qqautothumbsup.databinding.ActivityMainBinding
 import com.xiao.qqautothumbsup.databinding.FloatWindowsBinding
-import kotlin.concurrent.Volatile
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var fwBinding: FloatWindowsBinding
     private var asUnAvailable = true
 
-    @Volatile
-    private var state = ""
-
     companion object {
-        private val TAG = MainActivity::class.java.simpleName
+        private val TAG = MainActivity.javaClass.simpleName
         private const val FLOAT_TAG = "likeFloat"
-        private const val EXTRA_FRAGMENT_ARG_KEY = ":settings:fragment_args_key"
-        private const val EXTRA_SHOW_FRAGMENT_ARGUMENTS = ":settings:show_fragment_args"
-
-        @JvmStatic
-        var isLike = false
-            private set
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SpUtil.instance.init(this)
         binding = ActivityMainBinding.inflate(layoutInflater)
         fwBinding = FloatWindowsBinding.inflate(layoutInflater)
         setContentView(binding.getRoot())
-        /* 数据恢复 */
-        reSetData(savedInstanceState)
         /* 控件初始化 */
         init()
     }
@@ -60,7 +54,6 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         /* 隐藏返回软件控件 */
         fwBinding.returnBtn.visibility = View.GONE
-        state = "onResume"
         /* 权限检查 */
         request()
     }
@@ -69,20 +62,6 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         /* 显示返回软件控件 */
         fwBinding.returnBtn.visibility = View.VISIBLE
-        state = "onPause"
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        isLike = false
-        MainAccessibilityService.cancelTask()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString("state", state)
-        outState.putString("unAvailable", asUnAvailable.toString())
-        outState.putString("like", isLike.toString())
     }
 
     /**
@@ -93,7 +72,9 @@ class MainActivity : AppCompatActivity() {
         binding.gotoSettingBtn.setOnClickListener {
             val bundle = Bundle()
             /* 设置要启用的组件名 */
-            val componentName = ComponentName("com.xiao.qqautothumbsup", MainAccessibilityService::class.java.name).flattenToString()
+            val componentName =
+                ComponentName(packageName, MainAccessibilityService::class.java.name)
+                    .flattenToString()
             bundle.putString(EXTRA_FRAGMENT_ARG_KEY, componentName)
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             intent.putExtra(EXTRA_FRAGMENT_ARG_KEY, componentName)
@@ -103,7 +84,7 @@ class MainActivity : AppCompatActivity() {
         /* 创建浮窗 */
         binding.buildWinBtn.setOnClickListener {
             /* 如果Android版本大于6.0且未授予系统悬浮窗权限 */
-            if (!checkPermission(this)) AlertDialog.Builder(this)
+            if (!PermissionUtils.checkPermission(this)) MaterialAlertDialogBuilder(this)
                     .setTitle("提示")
                     .setMessage("创建悬浮窗需要允许显示在应用上层权限!")
                     .setPositiveButton("确定") { _, _ ->
@@ -130,7 +111,7 @@ class MainActivity : AppCompatActivity() {
         binding.jumpBtn.setOnClickListener {
             try {
                 val intent = Intent()
-                val cmp = ComponentName("com.tencent.mobileqq", "com.tencent.mobileqq.activity.SplashActivity")
+                val cmp = ComponentName(QQ_PACKAGE_NAME, QQ_COMPONENT_NAME)
                 intent.setAction(Intent.ACTION_MAIN)
                 intent.addCategory(Intent.CATEGORY_LAUNCHER)
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -145,7 +126,7 @@ class MainActivity : AppCompatActivity() {
         fwBinding.resetBtn.setOnClickListener {
             fwBinding.apply {
                 visOffBtn.visibility = View.VISIBLE
-                returnBtn.visibility = if (state == "onPause") View.VISIBLE else View.GONE
+                returnBtn.visibility = if (!getForegroundStatus()) View.VISIBLE else View.GONE
                 finishBtn.visibility = View.VISIBLE
                 resetBtn.visibility = View.GONE
             }
@@ -159,7 +140,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun request() {
         /* 检查系统悬浮窗权限 */
-        val easyFloatPermission = !checkPermission(this)
+        val easyFloatPermission = !PermissionUtils.checkPermission(this)
         /* 检查无障碍权限 */
         isAccessibilityServiceEnabled(this, MainAccessibilityService::class.java)
         /* 设置是否需要跳转申请权限 */
@@ -183,19 +164,25 @@ class MainActivity : AppCompatActivity() {
                     /* 自动点赞 */
                     fwBinding.likeBtn.setOnClickListener {
                         /* 自动点赞 */
-                        if (!isLike) {
-                            isLike = true
-                            fwBinding.apply {
-                                likeBtn.text = "关闭点赞"
-                                collapseBtn.contentDescription = "关闭点赞"
-                                likeBtn.icon = AppCompatResources.getDrawable(this@MainActivity, R.drawable.thumb_down_off)
-                            }
-                        } else {
-                            isLike = false
+                        if (SpUtil.instance.get(IS_AUTO_LIKE_ENABLE, false) == true) {
+                            SpUtil.instance.put(IS_AUTO_LIKE_ENABLE, false)
                             fwBinding.apply {
                                 likeBtn.text = "开启点赞"
                                 collapseBtn.contentDescription = "开启点赞"
-                                likeBtn.icon = AppCompatResources.getDrawable(this@MainActivity, R.drawable.thumb_up)
+                                likeBtn.icon = AppCompatResources.getDrawable(
+                                    this@MainActivity,
+                                    R.drawable.thumb_up
+                                )
+                            }
+                        } else {
+                            SpUtil.instance.put(IS_AUTO_LIKE_ENABLE, true)
+                            fwBinding.apply {
+                                likeBtn.text = "关闭点赞"
+                                collapseBtn.contentDescription = "关闭点赞"
+                                likeBtn.icon = AppCompatResources.getDrawable(
+                                    this@MainActivity,
+                                    R.drawable.thumb_down_off
+                                )
                             }
                         }
                     }
@@ -239,8 +226,13 @@ class MainActivity : AppCompatActivity() {
                             expandedMenu.visibility = if (isExpand) View.GONE else View.VISIBLE
                             /* 设置展开与收起按键状态 */
                             collapseBtn.contentDescription = if (isExpand) "展开浮窗" else "收起浮窗"
-                            collapseBtn.setBackgroundColor(getResources().getColor(if (isExpand) R.color.green else R.color.blue))
-                            collapseBtn.icon = AppCompatResources.getDrawable(this@MainActivity, if (isExpand) R.drawable.expand else R.drawable.collapse)
+                            collapseBtn.setBackgroundColor(
+                                getResources().getColor(if (isExpand) R.color.green else R.color.blue)
+                            )
+                            collapseBtn.icon = AppCompatResources.getDrawable(
+                                this@MainActivity,
+                                if (isExpand) R.drawable.expand else R.drawable.collapse
+                            )
                         }
                     }
                 }
@@ -250,14 +242,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * 数据恢复
+     * 获取当前组件的前台状态
+     *
+     * @return Boolean 返回当前组件是否处于前台状态，当生命周期状态至少为 STARTED 时返回 true ，否则返回 false
      */
-    private fun reSetData(savedInstanceState: Bundle?) {
-        if (savedInstanceState == null) return
-        state = savedInstanceState.getString("state").toString()
-        asUnAvailable = savedInstanceState.getString("unAvailable").toBoolean()
-        isLike = savedInstanceState.getString("like").toBoolean()
-    }
+    fun getForegroundStatus() = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
 
     /**
      * 无障碍权限检查
@@ -265,12 +254,15 @@ class MainActivity : AppCompatActivity() {
      * @param context Activity上下文
      * @param service 无障碍服务类
      */
-    @SuppressLint("NewApi")
-    private fun isAccessibilityServiceEnabled(context: Context, service: Class<out AccessibilityService?>) {
-        val am = context.getSystemService(ACCESSIBILITY_SERVICE) as AccessibilityManager
-        val enabledServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
-        asUnAvailable = !enabledServices.stream()
-                .map { serviceInfo -> serviceInfo.resolveInfo.serviceInfo }
-                .anyMatch { it.packageName == context.packageName && it.name == service.name }
+    private fun isAccessibilityServiceEnabled(
+        context: Context,
+        service: Class<out AccessibilityService?>
+    ) {
+        val enabledServices =
+            (context.getSystemService(ACCESSIBILITY_SERVICE) as AccessibilityManager)
+                .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+        asUnAvailable = !enabledServices
+            .map { serviceInfo -> serviceInfo.resolveInfo.serviceInfo }
+            .any { it.packageName == context.packageName && it.name == service.name }
     }
 }
