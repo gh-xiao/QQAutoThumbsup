@@ -9,14 +9,12 @@ class SpUtil private constructor() {
         val instance by lazy { SpUtil() }
     }
 
-    private lateinit var context: Context
     lateinit var preferences: SharedPreferences
         private set
     private lateinit var editor: SharedPreferences.Editor
 
     fun init(context: Context) {
-        this.context = context.applicationContext
-        preferences = context.getSharedPreferences(context.packageName, Application.MODE_PRIVATE)
+        preferences = context.applicationContext.getSharedPreferences(context.packageName, Application.MODE_PRIVATE)
         editor = preferences.edit()
     }
 

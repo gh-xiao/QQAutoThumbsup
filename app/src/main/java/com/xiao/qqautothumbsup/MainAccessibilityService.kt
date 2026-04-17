@@ -1,6 +1,7 @@
 package com.xiao.qqautothumbsup
 
 import android.accessibilityservice.AccessibilityService
+import android.annotation.SuppressLint
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -10,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
+@SuppressLint("AccessibilityPolicy")
 class MainAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var lastClickTime = 0L

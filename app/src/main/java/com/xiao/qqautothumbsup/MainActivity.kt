@@ -13,6 +13,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.lifecycle.Lifecycle
@@ -27,20 +28,22 @@ import com.xiao.qqautothumbsup.Constant.EXTRA_SHOW_FRAGMENT_ARGUMENTS
 import com.xiao.qqautothumbsup.Constant.IS_AUTO_LIKE_ENABLE
 import com.xiao.qqautothumbsup.Constant.QQ_COMPONENT_NAME
 import com.xiao.qqautothumbsup.Constant.QQ_PACKAGE_NAME
+import com.xiao.qqautothumbsup.MessageDialogFragment.Companion.showMsgDialog
 import com.xiao.qqautothumbsup.databinding.ActivityMainBinding
 import com.xiao.qqautothumbsup.databinding.FloatWindowsBinding
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        private const val TAG = "MainActivity"
+        private const val FLOAT_TAG = "likeFloat"
+    }
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var fwBinding: FloatWindowsBinding
     private var asUnAvailable = true
 
-    companion object {
-        private val TAG = MainActivity.javaClass.simpleName
-        private const val FLOAT_TAG = "likeFloat"
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         SpUtil.instance.init(this)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -70,34 +73,39 @@ class MainActivity : AppCompatActivity() {
     private fun init() {
         /* 前往无障碍设置 */
         binding.gotoSettingBtn.setOnClickListener {
-            val bundle = Bundle()
-            /* 设置要启用的组件名 */
-            val componentName =
-                ComponentName(packageName, MainAccessibilityService::class.java.name)
-                    .flattenToString()
-            bundle.putString(EXTRA_FRAGMENT_ARG_KEY, componentName)
-            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            intent.putExtra(EXTRA_FRAGMENT_ARG_KEY, componentName)
-            intent.putExtra(EXTRA_SHOW_FRAGMENT_ARGUMENTS, bundle)
-            startActivity(intent)
+            val msgDialogFragment = MessageDialogFragment.newInstance()
+            msgDialogFragment.setOnDialogClick(
+                onConfirm = { jumpToAccessibilitySetting() },
+                onCancel = {}
+            )
+            msgDialogFragment.showMsgDialog(
+                supportFragmentManager,
+                title = getString(R.string.tip),
+                content = getString(R.string.note_content)
+            )
         }
         /* 创建浮窗 */
         binding.buildWinBtn.setOnClickListener {
             /* 如果Android版本大于6.0且未授予系统悬浮窗权限 */
-            if (!PermissionUtils.checkPermission(this)) MaterialAlertDialogBuilder(this)
-                    .setTitle("提示")
-                    .setMessage("创建悬浮窗需要允许显示在应用上层权限!")
-                    .setPositiveButton("确定") { _, _ ->
+            if (!PermissionUtils.checkPermission(this)) {
+                val msgDialogFragment = MessageDialogFragment.newInstance()
+                msgDialogFragment.setOnDialogClick(
+                    onConfirm = {
                         requestPermission(this, object : OnPermissionResult {
                             override fun permissionResult(isOpen: Boolean) {
                                 buildEasyFloatWin()
                                 binding.buildWinBtn.isEnabled = !isOpen
                             }
                         })
-                    }
-                    .setNegativeButton("取消") { _, _ -> }
-                    .show()
-            else {
+                    },
+                    onCancel = {}
+                )
+                msgDialogFragment.showMsgDialog(
+                    supportFragmentManager,
+                    title = getString(R.string.tip),
+                    content = getString(R.string.need_system_alert_window)
+                )
+            } else {
                 buildEasyFloatWin()
                 it.isEnabled = false
             }
@@ -154,92 +162,103 @@ class MainActivity : AppCompatActivity() {
         binding.state2.setTextColor(if (easyFloatPermission) Color.RED else Color.GREEN)
     }
 
-    private fun buildEasyFloatWin() {
-        EasyFloat.with(this)
-                .setTag(FLOAT_TAG)
-                .setGravity(Gravity.END or Gravity.BOTTOM)
-                .setLayoutChangedGravity(Gravity.END or Gravity.BOTTOM)
-                /* 设置浮窗布局 */
-                .setLayout(fwBinding.getRoot()) {
-                    /* 自动点赞 */
-                    fwBinding.likeBtn.setOnClickListener {
-                        /* 自动点赞 */
-                        if (SpUtil.instance.get(IS_AUTO_LIKE_ENABLE, false) == true) {
-                            SpUtil.instance.put(IS_AUTO_LIKE_ENABLE, false)
-                            fwBinding.apply {
-                                likeBtn.text = "开启点赞"
-                                collapseBtn.contentDescription = "开启点赞"
-                                likeBtn.icon = AppCompatResources.getDrawable(
-                                    this@MainActivity,
-                                    R.drawable.thumb_up
-                                )
-                            }
-                        } else {
-                            SpUtil.instance.put(IS_AUTO_LIKE_ENABLE, true)
-                            fwBinding.apply {
-                                likeBtn.text = "关闭点赞"
-                                collapseBtn.contentDescription = "关闭点赞"
-                                likeBtn.icon = AppCompatResources.getDrawable(
-                                    this@MainActivity,
-                                    R.drawable.thumb_down_off
-                                )
-                            }
-                        }
+    private fun jumpToAccessibilitySetting() {
+        val bundle = Bundle()
+        /* 设置要启用的组件名 */
+        val componentName =
+            ComponentName(packageName, MainAccessibilityService::class.java.name)
+                .flattenToString()
+        bundle.putString(EXTRA_FRAGMENT_ARG_KEY, componentName)
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+        intent.putExtra(EXTRA_FRAGMENT_ARG_KEY, componentName)
+        intent.putExtra(EXTRA_SHOW_FRAGMENT_ARGUMENTS, bundle)
+        startActivity(intent)
+    }
+
+    private fun buildEasyFloatWin() = EasyFloat.with(this)
+        .setTag(FLOAT_TAG)
+        .setGravity(Gravity.END or Gravity.BOTTOM)
+        .setLayoutChangedGravity(Gravity.END or Gravity.BOTTOM)
+        /* 设置浮窗布局 */
+        .setLayout(fwBinding.getRoot()) {
+            /* 自动点赞 */
+            fwBinding.likeBtn.setOnClickListener {
+                /* 自动点赞 */
+                if (SpUtil.instance.get(IS_AUTO_LIKE_ENABLE, false) == true) {
+                    SpUtil.instance.put(IS_AUTO_LIKE_ENABLE, false)
+                    fwBinding.apply {
+                        likeBtn.text = "开启点赞"
+                        collapseBtn.contentDescription = "开启点赞"
+                        likeBtn.icon = AppCompatResources.getDrawable(
+                            this@MainActivity,
+                            R.drawable.thumb_up
+                        )
                     }
-                    /* 隐藏悬浮窗 */
-                    fwBinding.visOffBtn.setOnClickListener { EasyFloat.hide(FLOAT_TAG) }
-                    /* 隐藏控件 */
-                    fwBinding.visOffBtn.setOnLongClickListener {
-                        fwBinding.visOffBtn.visibility = View.GONE
-                        fwBinding.resetBtn.visibility = View.VISIBLE
-                        true
-                    }
-                    /* 返回软件 */
-                    fwBinding.returnBtn.setOnClickListener {
-                        startActivity(Intent(this, MainActivity::class.java))
-                    }
-                    /* 隐藏控件 */
-                    fwBinding.returnBtn.setOnLongClickListener {
-                        fwBinding.returnBtn.visibility = View.GONE
-                        fwBinding.resetBtn.visibility = View.VISIBLE
-                        true
-                    }
-                    /* 关闭软件 */
-                    fwBinding.finishBtn.setOnClickListener {
-                        /* 关闭悬浮窗 */
-                        EasyFloat.dismiss(FLOAT_TAG)
-                        /* 关闭activity */
-                        finishAndRemoveTask()
-                    }
-                    /* 隐藏控件 */
-                    fwBinding.finishBtn.setOnLongClickListener {
-                        fwBinding.finishBtn.visibility = View.GONE
-                        fwBinding.resetBtn.visibility = View.VISIBLE
-                        true
-                    }
-                    /* 展开与收起 */
-                    fwBinding.collapseBtn.setOnClickListener {
-                        /* 获得当前浮窗状态 */
-                        val isExpand = fwBinding.collapseBtn.contentDescription.toString() == "收起浮窗"
-                        fwBinding.apply {
-                            /* 设置菜单显示状态 */
-                            expandedMenu.visibility = if (isExpand) View.GONE else View.VISIBLE
-                            /* 设置展开与收起按键状态 */
-                            collapseBtn.contentDescription = if (isExpand) "展开浮窗" else "收起浮窗"
-                            collapseBtn.setBackgroundColor(
-                                getResources().getColor(if (isExpand) R.color.green else R.color.blue)
-                            )
-                            collapseBtn.icon = AppCompatResources.getDrawable(
-                                this@MainActivity,
-                                if (isExpand) R.drawable.expand else R.drawable.collapse
-                            )
-                        }
+                } else {
+                    SpUtil.instance.put(IS_AUTO_LIKE_ENABLE, true)
+                    fwBinding.apply {
+                        likeBtn.text = "关闭点赞"
+                        collapseBtn.contentDescription = "关闭点赞"
+                        likeBtn.icon = AppCompatResources.getDrawable(
+                            this@MainActivity,
+                            R.drawable.thumb_down_off
+                        )
                     }
                 }
-                /* 设置显示类型 */
-                .setShowPattern(ShowPattern.ALL_TIME)
-                .show()
-    }
+            }
+            /* 隐藏悬浮窗 */
+            fwBinding.visOffBtn.setOnClickListener { EasyFloat.hide(FLOAT_TAG) }
+            /* 隐藏控件 */
+            fwBinding.visOffBtn.setOnLongClickListener {
+                fwBinding.visOffBtn.visibility = View.GONE
+                fwBinding.resetBtn.visibility = View.VISIBLE
+                true
+            }
+            /* 返回软件 */
+            fwBinding.returnBtn.setOnClickListener {
+                startActivity(Intent(this, MainActivity::class.java))
+            }
+            /* 隐藏控件 */
+            fwBinding.returnBtn.setOnLongClickListener {
+                fwBinding.returnBtn.visibility = View.GONE
+                fwBinding.resetBtn.visibility = View.VISIBLE
+                true
+            }
+            /* 关闭软件 */
+            fwBinding.finishBtn.setOnClickListener {
+                /* 关闭悬浮窗 */
+                EasyFloat.dismiss(FLOAT_TAG)
+                /* 关闭activity */
+                finishAndRemoveTask()
+            }
+            /* 隐藏控件 */
+            fwBinding.finishBtn.setOnLongClickListener {
+                fwBinding.finishBtn.visibility = View.GONE
+                fwBinding.resetBtn.visibility = View.VISIBLE
+                true
+            }
+            /* 展开与收起 */
+            fwBinding.collapseBtn.setOnClickListener {
+                /* 获得当前浮窗状态 */
+                val isExpand = fwBinding.collapseBtn.contentDescription.toString() == "收起浮窗"
+                fwBinding.apply {
+                    /* 设置菜单显示状态 */
+                    expandedMenu.visibility = if (isExpand) View.GONE else View.VISIBLE
+                    /* 设置展开与收起按键状态 */
+                    collapseBtn.contentDescription = if (isExpand) "展开浮窗" else "收起浮窗"
+                    collapseBtn.setBackgroundColor(
+                        getResources().getColor(if (isExpand) R.color.green else R.color.blue)
+                    )
+                    collapseBtn.icon = AppCompatResources.getDrawable(
+                        this@MainActivity,
+                        if (isExpand) R.drawable.expand else R.drawable.collapse
+                    )
+                }
+            }
+        }
+        /* 设置显示类型 */
+        .setShowPattern(ShowPattern.ALL_TIME)
+        .show()
 
     /**
      * 获取当前组件的前台状态

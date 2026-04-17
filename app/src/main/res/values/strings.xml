@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">QQ自动点赞</string>
+    <string name="confirm">确定</string>
+    <string name="cancel">取消</string>
+    <string name="tip">提示</string>
+    <string name="note_content">如果系统提示"已拒绝向此应用授予访问权限"，那么请自行前往应用详情中开启"允许受限制的设置"。</string>
+    <string name="need_system_alert_window">创建悬浮窗需要允许显示在应用上层权限!</string>
 </resources>
